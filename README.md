@@ -1,10 +1,19 @@
 # vuls-ssh-command
 
+## Create a Vuls User
+
 ```
-$ sudo adduser -m vuls-user
-$ sudo su vuls-user
-$ mkdir -m 700 /home/vuls-user/.ssh
-$ curl https://raw.githubusercontent.com/asannou/vuls-ssh-command/master/amazon-linux.sh > /home/vuls-user/.ssh/vuls-ssh-command-amazon-linux.sh
-$ chmod +x /home/vuls-user/.ssh/vuls-ssh-command-amazon-linux.sh
-$ echo 'command="/home/vuls-user/.ssh/vuls-ssh-command-amazon-linux.sh" ssh-rsa ...' > /home/vuls-user/.ssh/authorized_keys
+$ sudo adduser -m vuls
+$ sudo su vuls
+$ mkdir -m 700 /home/vuls/.ssh
+```
+
+## Install
+
+### Amazon Linux
+
+```
+$ curl https://raw.githubusercontent.com/asannou/vuls-ssh-command/master/amazon-linux.sh > /home/vuls/.ssh/vuls-ssh-command.sh
+$ chmod +x /home/vuls/.ssh/vuls-ssh-command.sh
+$ echo 'command="/home/vuls/.ssh/vuls-ssh-command.sh" ssh-rsa ...' > /home/vuls/.ssh/authorized_keys
 ```
