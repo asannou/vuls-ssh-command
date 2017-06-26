@@ -1,5 +1,7 @@
 # vuls-ssh-command
 
+Restrict commands via SSH like `curl http://169.254.169.254/latest/meta-data/iam/security-credentials/role_name`.
+
 ## Create a Vuls User
 
 ```
