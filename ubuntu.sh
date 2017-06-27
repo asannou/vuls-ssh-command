@@ -36,13 +36,17 @@ case "$1" in
   curl)
     get_instance_id
     ;;
-  ls|cat|lsb_release|type|dpkg-query|apt-get|apt-cache)
+  ls|cat|lsb_release|dpkg-query|apt-get|apt-cache)
     exec_command "$@"
     ;;
   sudo)
     exec_command sudo -S apt-get update
     ;;
+  type)
+    "$@"
+    exit $?
+    ;;
 esac
 
-exit 1
+exit 126
 

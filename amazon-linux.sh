@@ -47,10 +47,14 @@ case "$1" in
   curl)
     get_instance_id
     ;;
-  ls|cat|type|rpm|yum)
+  ls|cat|rpm|yum)
     exec_command "$@"
+    ;;
+  type)
+    "$@"
+    exit $?
     ;;
 esac
 
-exit 1
+exit 126
 
