@@ -1,0 +1,33 @@
+{
+  "schemaVersion":"2.0",
+  "description":"Create a new user for Vuls.",
+  "parameters":{
+    "authorizedkeys":{
+      "type":"String",
+      "description":"(Required) SSH authorized keys",
+      "default": "",
+      "displayType":"textarea",
+      "allowedPattern": "^[ +\\-./=@0-9A-Za-z]+$"
+    }
+  },
+  "mainSteps":[
+    {
+      "action":"aws:runShellScript",
+      "name":"runShellScript",
+      "inputs":{
+        "runCommand":[
+          "#!/bin/sh",
+          "USER=vuls",
+          "adduser -m $USER",
+          "DOTSSH=/home/$USER/.ssh",
+          "mkdir -m 700 $DOTSSH",
+          "COMMAND=$DOTSSH/vuls-ssh-command.sh",
+          "curl -s -o $COMMAND Https://raw.githubusercontent.com/asannou/vuls-ssh-command/master/amazon-linux.sh",
+          "echo \"command=\\\"$COMMAND\\\" {{authorizedkeys}}\" > $DOTSSH/authorized_keys",
+          "chmod 700 $COMMAND",
+          "chown -R $USER:$USER $DOTSSH"
+        ]
+      }
+    }
+  ]
+}
