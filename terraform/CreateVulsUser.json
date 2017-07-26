@@ -2,9 +2,9 @@
   "schemaVersion":"2.0",
   "description":"Create a new user for Vuls.",
   "parameters":{
-    "authorizedkeys":{
+    "publickey":{
       "type":"String",
-      "description":"(Required) SSH authorized keys",
+      "description":"(Required) SSH public key",
       "default": "",
       "displayType":"textarea",
       "allowedPattern": "^[ +\\-./=@0-9A-Za-z]+$"
@@ -23,9 +23,12 @@
           "mkdir -m 700 $DOTSSH",
           "COMMAND=$DOTSSH/vuls-ssh-command.sh",
           "curl -s -o $COMMAND Https://raw.githubusercontent.com/asannou/vuls-ssh-command/master/amazon-linux.sh",
-          "echo \"command=\\\"$COMMAND\\\" {{authorizedkeys}}\" > $DOTSSH/authorized_keys",
+          "echo \"command=\\\"$COMMAND\\\" {{publickey}}\" > $DOTSSH/authorized_keys",
           "chmod 700 $COMMAND",
-          "chown -R $USER:$USER $DOTSSH"
+          "chown -R $USER:$USER $DOTSSH",
+          "PUBLICIP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)",
+          "HOSTKEY=$(cat /etc/ssh/ssh_host_ecdsa_key.pub)",
+          "echo \"$PUBLICIP $HOSTKEY\""
         ]
       }
     }

@@ -1,0 +1,6 @@
+config.toml.default
+cve.sqlite3*
+go-cve-dictionary-log
+log
+results
+ssh

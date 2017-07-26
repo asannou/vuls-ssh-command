@@ -1,0 +1,13 @@
+[slack]
+#hookURL = "https://hooks.slack.com/services/"
+#channel = ""
+#notifyUsers = []
+
+[default]
+port = "22"
+user = "vuls"
+keyPath = "/root/.ssh/id_rsa"
+
+[servers]
+[servers.test]
+host = "52.199.26.3"
