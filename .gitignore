@@ -1,4 +1,4 @@
-config.toml.default
+config.toml
 cve.sqlite3*
 go-cve-dictionary-log
 log
