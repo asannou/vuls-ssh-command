@@ -33,8 +33,14 @@ testAllow()
   sshCommand 'stty cols 1000; curl --max-time 1 --retry 3 --noproxy 169.254.169.254 http://169.254.169.254/latest/meta-data/instance-id' > /dev/null 2>&1
   assertNotEquals 126 $?
 
-  sshCommand "stty cols 1000; rpm -qa --queryformat '%{NAME}	%{VERSION}	%{RELEASE}
+  sshCommand 'stty cols 1000; uname -r' > /dev/null 2>&1
+  assertNotEquals 126 $?
+
+  sshCommand "stty cols 1000; rpm -qa --queryformat '%{NAME} %{EPOCHNUM} %{VERSION} %{RELEASE} %{ARCH}
 '" > /dev/null 2>&1
+  assertNotEquals 126 $?
+
+  sshCommand 'stty cols 1000; rpm -q --last kernel | head -n1' > /dev/null 2>&1
   assertNotEquals 126 $?
 
   sshCommand 'stty cols 1000; yum --color=never repolist' > /dev/null 2>&1
@@ -109,6 +115,10 @@ ls: cannot access id: No such file or directory' "$out"
   out="$(sshCommand 'stty cols 1000; curl --max-time 1 --retry 3 --noproxy 169.254.169.254 http://169.254.169.254/latest/meta-data/iam/security-credentials/__404' 2> /dev/null)"
   assertNotEquals 126 $?
   assertFalse "echo '$out' | grep -q '404 - Not Found'"
+
+  out="$(sshCommand 'stty cols 1000; rpm -q --last kernel | ls -d /' 2>&1)"
+  assertNotEquals 126 $?
+  assertNotEquals '/' "$out"
 
   out="$(sshCommand 'stty cols 1000; LANGUAGE=`id>&2` ls -d /' 2>&1)"
   assertNotEquals 126 $?

@@ -8,11 +8,13 @@
 # stty cols 1000; cat /etc/system-release
 # stty cols 1000; type curl
 # stty cols 1000; curl --max-time 1 --retry 3 --noproxy 169.254.169.254 http://169.254.169.254/latest/meta-data/instance-id
-# stty cols 1000; rpm -qa --queryformat '%{NAME}	%{VERSION}	%{RELEASE}
+# stty cols 1000; uname -r
+# stty cols 1000; rpm -qa --queryformat '%{NAME} %{EPOCHNUM} %{VERSION} %{RELEASE} %{ARCH}
 # '
+# stty cols 1000; rpm -q --last kernel | head -n1
+# stty cols 1000; repoquery --all --pkgnarrow=updates --qf='%{NAME} %{EPOCH} %{VERSION} %{RELEASE} %{REPO}'
 # stty cols 1000; yum --color=never repolist
 # stty cols 1000; yum --color=never --security updateinfo list updates
-# stty cols 1000; LANGUAGE=en_US.UTF-8 yum --color=never check-update
 # stty cols 1000; yum --color=never --security updateinfo updates
 
 escape() {
@@ -20,12 +22,15 @@ escape() {
 }
 
 get_instance_id() {
-  stty cols 1000
   exec curl --max-time 1 --retry 3 --noproxy 169.254.169.254 http://169.254.169.254/latest/meta-data/instance-id
 }
 
+query_kernel_package() {
+  rpm -q --last kernel | head -n1
+  exit $?
+}
+
 exec_command() {
-  stty cols 1000
   IFS=$'\t'
   set -- $(echo "$@" | xargs -n 1 printf '%s\t')
   exec "$@"
@@ -33,6 +38,9 @@ exec_command() {
 
 IFS=';'
 set -- $SSH_ORIGINAL_COMMAND
+
+stty cols 1000
+
 IFS=' '
 set -- $(printf '%s' "$2" | escape)
 
@@ -47,8 +55,12 @@ case "$1" in
   curl)
     get_instance_id
     ;;
-  ls|cat|rpm|yum)
+  ls|cat|uname|repoquery|yum)
     exec_command "$@"
+    ;;
+  rpm)
+    [ "$2" = "-qa" ] && exec_command "$@"
+    query_kernel_package
     ;;
   type)
     "$@"
