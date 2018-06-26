@@ -2,6 +2,8 @@
 
 set -e
 
+DOCKER_IMAGE=vuls/vuls@sha256:7b7f4fcca463476d4fecf3ba107f43bde12ceb9818e4c737d34ad9818f5db708
+
 describe_instances() {
   aws ec2 describe-instances --output text --filters 'Name=tag:Vuls,Values=1' --query 'Reservations[].Instances[].[InstanceId,Tags[?Key==`Name`].Value|[0]]'
 }
@@ -19,7 +21,7 @@ fetch_nvd() {
 }
 
 run_vuls() {
-  docker run --rm -it -v $PWD/ssh:/root/.ssh:ro -v $PWD:/vuls -v $PWD/log:/var/log/vuls vuls/vuls "$@"
+  docker run --rm -it -v $PWD/ssh:/root/.ssh:ro -v $PWD:/vuls -v $PWD/log:/var/log/vuls $DOCKER_IMAGE "$@"
 }
 
 if [ ! -d ssh ]
