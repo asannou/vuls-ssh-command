@@ -2,7 +2,7 @@
 
 set -e
 
-DOCKER_IMAGE=vuls/vuls@sha256:7b7f4fcca463476d4fecf3ba107f43bde12ceb9818e4c737d34ad9818f5db708
+DOCKER_IMAGE=vuls/vuls@sha256:61f3d7de6b3bc4753f15f3829149a318c77f21e94054ff4f45186062343f6dad
 
 describe_instances() {
   aws ec2 describe-instances --output text --filters 'Name=tag:Vuls,Values=1' --query 'Reservations[].Instances[].[InstanceId,Tags[?Key==`Name`].Value|[0]]'
