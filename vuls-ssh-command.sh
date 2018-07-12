@@ -54,7 +54,7 @@ exec_command() {
   exec "$@"
 }
 
-verify_enviroment() {
+verify_env() {
   case "$1" in
     LANGUAGE=*)
       echo "$1"
@@ -64,13 +64,20 @@ verify_enviroment() {
 
 verify_command() {
   case "$1" in
-    ls|type|lsb_release|uname|test|repoquery|dpkg-query|apt-cache)
+    ls|lsb_release|uname|test|repoquery|dpkg-query|apt-cache)
       echo "$@"
       ;;
     cat)
       case "$2" in
         /etc/system-release|/etc/issue|/etc/lsb-release|/etc/debian_version)
           echo "$@"
+          ;;
+      esac
+      ;;
+    type)
+      case "$2" in
+        curl|wget)
+          echo "sh -c 'type $2'"
           ;;
       esac
       ;;
@@ -115,10 +122,10 @@ verify_command() {
           set -- $(echo "$@" | xargs printf '%s\t')
           IFS=' '
           set -- $8
-          enviroment=$(verify_enviroment "$@")
-          if [ -n "$enviroment" ]
+          env=$(verify_env "$@")
+          if [ -n "$env" ]
           then
-            options="$options --env '$enviroment'"
+            options="$options --env '$env'"
             shift
           fi
           command=$(verify_command "$@")
@@ -142,25 +149,16 @@ fi
 IFS=' '
 set -- $(printf '%s' "$2" | escape)
 
-enviroment=$(verify_enviroment "$@")
-if [ -n "$enviroment" ]
+env=$(verify_env "$@")
+if [ -n "$env" ]
 then
-  export "$enviroment"
+  export "$env"
   shift
 fi
 
+IFS=' '
 set -- $(verify_command "$@")
+[ -n "$1" ] && exec_command "$@"
 
-case "$1" in
-  "")
-    exit 126
-    ;;
-  type)
-    "$@"
-    exit $?
-    ;;
-  *)
-    exec_command "$@"
-    ;;
-esac
+exit 126
 
