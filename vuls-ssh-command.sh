@@ -142,12 +142,13 @@ set -- $SSH_ORIGINAL_COMMAND
 if test_stty "$1"
 then
   $1
+  shift
 else
   exit 126
 fi
 
 IFS=' '
-set -- $(printf '%s' "$2" | escape)
+set -- $(printf '%s' "$(printf ';%s' "$@" | cut -c 2-)" | escape)
 
 env=$(verify_env "$@")
 if [ -n "$env" ]

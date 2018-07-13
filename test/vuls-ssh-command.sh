@@ -124,7 +124,21 @@ testDeny()
 
   sshCommand 'stty cols 1000; cat /etc/passwd' > /dev/null 2>&1
   assertEquals 126 $?
+}
 
+testDockerDeny()
+{
+  sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c 'id'" > /dev/null 2>&1
+  assertEquals 126 $?
+
+  sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c 'id; id'" > /dev/null 2>&1
+  assertEquals 126 $?
+
+  sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c 'id; ls -d /'" > /dev/null 2>&1
+  assertEquals 126 $?
+
+  sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c 'cat /etc/passwd'" > /dev/null 2>&1
+  assertEquals 126 $?
 }
 
 testTamper()
@@ -149,7 +163,8 @@ Try 'stty --help' for more information.
 
   out="$(sshCommand 'stty cols 1000; ls -d /; id' 2>&1)"
   assertNotEquals 126 $?
-  assertEquals '/' "$out"
+  assertEquals 'ls: cannot access /;: No such file or directory
+ls: cannot access id: No such file or directory' "$out"
 
   out="$(sshCommand 'stty cols 1000; ls `id`' 2>&1)"
   assertNotEquals 126 $?
@@ -192,6 +207,50 @@ ls: cannot access id: No such file or directory' "$out"
   assertEquals '/' "$out"
 
   out="$(sshCommand 'stty cols 1000; LANGUAGE=$(id>&2) ls -d /' 2>&1)"
+  assertNotEquals 126 $?
+  assertEquals '/' "$out"
+}
+
+testDockerTamper()
+{
+  out="$(sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c 'ls -d /; id'" 2>&1)"
+  assertNotEquals 126 $?
+  assertEquals 'ls: /;: No such file or directory
+ls: id: No such file or directory' "$out"
+
+  out="$(sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c '"'ls `id`'"'" 2>&1)"
+  assertNotEquals 126 $?
+  assertEquals 'ls: `id`: No such file or directory' "$out"
+
+  out="$(sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c '"'ls $(id)'"'" 2>&1)"
+  assertNotEquals 126 $?
+  assertEquals 'ls: $(id): No such file or directory' "$out"
+
+  out="$(sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c 'ls || id'" 2>&1)"
+  assertNotEquals 126 $?
+  assertEquals 'ls: ||: No such file or directory
+ls: id: No such file or directory' "$out"
+
+  out="$(sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c 'ls && id'" 2>&1)"
+  assertNotEquals 126 $?
+  assertEquals 'ls: &&: No such file or directory
+ls: id: No such file or directory' "$out"
+
+  out="$(sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c 'ls & id'" 2>&1)"
+  assertNotEquals 126 $?
+  assertEquals 'ls: &: No such file or directory
+ls: id: No such file or directory' "$out"
+
+  out="$(sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c 'ls > /dev/null'" 2>&1)"
+  assertNotEquals 126 $?
+  assertEquals '/dev/null
+ls: >: No such file or directory' "$out"
+
+  out="$(sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c '"'LANGUAGE=`id>&2` ls -d /'"'" 2>&1)"
+  assertNotEquals 126 $?
+  assertEquals '/' "$out"
+
+  out="$(sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c '"'LANGUAGE=$(id>&2) ls -d /'"'" 2>&1)"
   assertNotEquals 126 $?
   assertEquals '/' "$out"
 }
