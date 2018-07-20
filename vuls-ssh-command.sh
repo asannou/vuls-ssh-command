@@ -49,15 +49,15 @@ escape() {
 }
 
 exec_command() {
-  IFS=$'\t'
-  set -- $(echo "$@" | xargs printf '%s\t')
+  IFS='	'
+  set -- $(/bin/echo "$@" | xargs printf '%s\t')
   exec "$@"
 }
 
 verify_env() {
   case "$1" in
     LANGUAGE=*)
-      echo "$1"
+      /bin/echo "$1"
       ;;
   esac
 }
@@ -65,61 +65,61 @@ verify_env() {
 verify_command() {
   case "$1" in
     ls|lsb_release|uname|test|repoquery|dpkg-query|apt-cache)
-      echo "$@"
+      /bin/echo "$@"
       ;;
     cat)
       case "$2" in
         /etc/system-release|/etc/issue|/etc/lsb-release|/etc/debian_version)
-          echo "$@"
+          /bin/echo "$@"
           ;;
       esac
       ;;
     type)
       case "$2" in
         curl|wget)
-          echo "sh -c 'type $2'"
+          /bin/echo "sh -c 'type $2'"
           ;;
       esac
       ;;
     curl)
-      echo curl --max-time 1 --retry 3 --noproxy 169.254.169.254 http://169.254.169.254/latest/meta-data/instance-id
+      /bin/echo curl --max-time 1 --retry 3 --noproxy 169.254.169.254 http://169.254.169.254/latest/meta-data/instance-id
       ;;
     /sbin/ip)
-      echo /sbin/ip -o addr
+      /bin/echo /sbin/ip -o addr
       ;;
     yum)
-      [ "$4" = "updateinfo" ] && echo "$@"
+      [ "$4" = "updateinfo" ] && /bin/echo "$@"
       ;;
     rpm)
       case "$2" in
         -qa)
-          echo "$@"
+          /bin/echo "$@"
           ;;
         *)
-          echo rpm -q --last kernel
+          /bin/echo rpm -q --last kernel
           ;;
       esac
       ;;
     apt-get)
       case "$2" in
         update)
-          echo apt-get update
+          /bin/echo apt-get update
           ;;
         dist-upgrade)
-          echo apt-get dist-upgrade --dry-run
+          /bin/echo apt-get dist-upgrade --dry-run
           ;;
       esac
       ;;
     docker)
       case "$2" in
         ps)
-          echo "$@"
+          /bin/echo "$@"
           ;;
         exec)
           options="--user 0"
           container_id="$5"
-          IFS=$'\t'
-          set -- $(echo "$@" | xargs printf '%s\t')
+          IFS='	'
+          set -- $(/bin/echo "$@" | xargs printf '%s\t')
           IFS=' '
           set -- $8
           env=$(verify_env "$@")
@@ -129,7 +129,7 @@ verify_command() {
             shift
           fi
           command=$(verify_command "$@")
-          [ -n "$command" ] && echo docker exec $options $container_id $command
+          [ -n "$command" ] && /bin/echo docker exec $options $container_id $command
           ;;
       esac
       ;;

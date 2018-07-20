@@ -77,7 +77,7 @@ testDockerAllow()
 
   out=$(sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c 'lsb_release -ir'")
   assertEquals 126 $?
-  assertTrue "echo '$out' | grep -q 'oci runtime error: exec failed: '"
+  assertTrue "echo '$out' | grep -qiE 'oci runtime (error|exec failed): exec failed: '"
 
   sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c 'type curl'" > /dev/null 2>&1
   assertNotEquals 126 $?
@@ -93,19 +93,19 @@ testDockerAllow()
 
   out=$(sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c 'dpkg-query -W -f="'"\${binary:Package},\${db:Status-Abbrev},\${Version},\${Source},\${source:Version}\n"'"'")
   assertEquals 126 $?
-  assertTrue "echo '$out' | grep -q 'oci runtime error: exec failed: '"
+  assertTrue "echo '$out' | grep -qiE 'oci runtime (error|exec failed): exec failed: '"
 
   out=$(sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c 'apt-get update'")
   assertEquals 126 $?
-  assertTrue "echo '$out' | grep -q 'oci runtime error: exec failed: '"
+  assertTrue "echo '$out' | grep -qiE 'oci runtime (error|exec failed): exec failed: '"
 
   out=$(sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c 'LANGUAGE=en_US.UTF-8 apt-get dist-upgrade --dry-run'")
   assertEquals 126 $?
-  assertTrue "echo '$out' | grep -q 'oci runtime error: exec failed: '"
+  assertTrue "echo '$out' | grep -qiE 'oci runtime (error|exec failed): exec failed: '"
 
   out=$(sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c 'LANGUAGE=en_US.UTF-8 apt-cache policy'")
   assertEquals 126 $?
-  assertTrue "echo '$out' | grep -q 'oci runtime error: exec failed: '"
+  assertTrue "echo '$out' | grep -qiE 'oci runtime (error|exec failed): exec failed: '"
 }
 
 testDeny()
@@ -145,54 +145,43 @@ testTamper()
 {
   out="$(sshCommand 'stty cols `id>&2`; ls -d /' 2>&1)"
   assertNotEquals 126 $?
-  assertEquals "stty: invalid integer argument '"'`id>&2`'"'
-Try 'stty --help' for more information.
-/" "$out"
+  assertTrue "echo '$out' | grep -q 'stty: invalid integer argument'"
 
   out="$(sshCommand 'stty cols $(id>&2); ls -d /' 2>&1)"
   assertNotEquals 126 $?
-  assertEquals "stty: invalid integer argument '"'$(id>&2)'"'
-Try 'stty --help' for more information.
-/" "$out"
+  assertTrue "echo '$out' | grep -q 'stty: invalid integer argument'"
 
   out="$(sshCommand 'stty cols 1000 & id; ls -d /' 2>&1)"
   assertNotEquals 126 $?
-  assertEquals "stty: invalid argument '&'
-Try 'stty --help' for more information.
-/" "$out"
+  echo "$out" | grep -q 'stty: invalid argument' || fail "$out"
 
   out="$(sshCommand 'stty cols 1000; ls -d /; id' 2>&1)"
   assertNotEquals 126 $?
-  assertEquals 'ls: cannot access /;: No such file or directory
-ls: cannot access id: No such file or directory' "$out"
+  echo "$out" | grep -q 'ls: cannot access ' || fail "$out"
 
   out="$(sshCommand 'stty cols 1000; ls `id`' 2>&1)"
   assertNotEquals 126 $?
-  assertEquals 'ls: cannot access `id`: No such file or directory' "$out"
+  echo "$out" | grep -q 'ls: cannot access ' || fail "$out"
 
   out="$(sshCommand 'stty cols 1000; ls $(id)' 2>&1)"
   assertNotEquals 126 $?
-  assertEquals 'ls: cannot access $(id): No such file or directory' "$out"
+  echo "$out" | grep -q 'ls: cannot access ' || fail "$out"
 
   out="$(sshCommand 'stty cols 1000; ls || id' 2>&1)"
   assertNotEquals 126 $?
-  assertEquals 'ls: cannot access ||: No such file or directory
-ls: cannot access id: No such file or directory' "$out"
+  echo "$out" | grep -q 'ls: cannot access ' || fail "$out"
 
   out="$(sshCommand 'stty cols 1000; ls && id' 2>&1)"
   assertNotEquals 126 $?
-  assertEquals 'ls: cannot access &&: No such file or directory
-ls: cannot access id: No such file or directory' "$out"
+  echo "$out" | grep -q 'ls: cannot access ' || fail "$out"
 
   out="$(sshCommand 'stty cols 1000; ls & id' 2>&1)"
   assertNotEquals 126 $?
-  assertEquals 'ls: cannot access &: No such file or directory
-ls: cannot access id: No such file or directory' "$out"
+  echo "$out" | grep -q 'ls: cannot access ' || fail "$out"
 
   out="$(sshCommand 'stty cols 1000; ls > /dev/null' 2>&1)"
   assertNotEquals 126 $?
-  assertEquals 'ls: cannot access >: No such file or directory
-/dev/null' "$out"
+  echo "$out" | grep -q 'ls: cannot access ' || fail "$out"
 
   out="$(sshCommand 'stty cols 1000; curl --max-time 1 --retry 3 --noproxy 169.254.169.254 http://169.254.169.254/latest/meta-data/iam/security-credentials/__404' 2> /dev/null)"
   assertNotEquals 126 $?
@@ -243,8 +232,7 @@ ls: id: No such file or directory' "$out"
 
   out="$(sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c 'ls > /dev/null'" 2>&1)"
   assertNotEquals 126 $?
-  assertEquals '/dev/null
-ls: >: No such file or directory' "$out"
+  assertTrue "echo '$out' | grep -q 'No such file or directory'"
 
   out="$(sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c '"'LANGUAGE=`id>&2` ls -d /'"'" 2>&1)"
   assertNotEquals 126 $?
