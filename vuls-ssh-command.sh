@@ -1,6 +1,6 @@
 #!/bin/sh
 
-#echo "$SSH_ORIGINAL_COMMAND" >> /tmp/vuls-ssh-command.debug
+#/bin/echo "$SSH_ORIGINAL_COMMAND" >> /tmp/vuls-ssh-command.debug
 
 # stty cols 1000; ls /etc/debian_version
 # stty cols 1000; ls /etc/fedora-release
@@ -20,6 +20,35 @@
 # stty cols 1000; yum --color=never --security updateinfo list updates
 # stty cols 1000; yum --color=never --security updateinfo updates
 
+# stty cols 1000; ls /etc/debian_version
+# stty cols 1000; cat /etc/issue
+# stty cols 1000; lsb_release -ir
+# stty cols 1000; type curl
+# stty cols 1000; curl --max-time 1 --retry 3 --noproxy 169.254.169.254 http://169.254.169.254/latest/meta-data/instance-id
+# stty cols 1000; /sbin/ip -o addr
+# stty cols 1000; uname -r
+# stty cols 1000; test -f /var/run/reboot-required
+# stty cols 1000; dpkg-query -W -f="\${binary:Package},\${db:Status-Abbrev},\${Version},\${Source},\${source:Version}\n"
+# stty cols 1000; sudo -S apt-get update
+# stty cols 1000; LANGUAGE=en_US.UTF-8 apt-get dist-upgrade --dry-run
+# stty cols 1000; LANGUAGE=en_US.UTF-8 apt-cache policy
+
+# stty cols 1000; docker ps --format '{{.ID}} {{.Names}} {{.Image}}'
+# stty cols 1000; docker ps --filter 'status=exited' --format '{{.ID}} {{.Names}} {{.Image}}'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'ls /etc/debian_version'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'ls /etc/fedora-release'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'ls /etc/oracle-release'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'ls /etc/centos-release'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'cat /etc/centos-release'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'type curl'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'curl --max-time 1 --retry 3 --noproxy 169.254.169.254 http://169.254.169.254/latest/meta-data/instance-id'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c '/sbin/ip -o addr'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'uname -r'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'rpm -qa --queryformat "%{NAME} %{EPOCHNUM} %{VERSION} %{RELEASE} %{ARCH}
+# "'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'rpm -q --last kernel'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'repoquery --all --pkgnarrow=updates --qf="%{NAME} %{EPOCH} %{VERSION} %{RELEASE} %{REPO}"'
+
 # stty cols 1000; docker ps --format '{{.ID}} {{.Names}} {{.Image}}'
 # stty cols 1000; docker ps --filter 'status=exited' --format '{{.ID}} {{.Names}} {{.Image}}'
 # stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'ls /etc/debian_version'
@@ -37,6 +66,28 @@
 # stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'apt-get update'
 # stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'LANGUAGE=en_US.UTF-8 apt-get dist-upgrade --dry-run'
 # stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'LANGUAGE=en_US.UTF-8 apt-cache policy '
+
+# stty cols 1000; docker ps --format '{{.ID}} {{.Names}} {{.Image}}'
+# stty cols 1000; docker ps --filter 'status=exited' --format '{{.ID}} {{.Names}} {{.Image}}'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'ls /etc/debian_version'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'ls /etc/fedora-release'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'ls /etc/oracle-release'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'ls /etc/centos-release'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'ls /etc/redhat-release'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'ls /etc/system-release'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'ls /etc/os-release'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'zypper -V'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'uname'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'ls /etc/alpine-release'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'cat /etc/alpine-release'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'type curl'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'type wget'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'wget --tries=3 --timeout=1 --no-proxy -q -O - http://169.254.169.254/latest/meta-data/instance-id'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c '/sbin/ip -o addr'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'apk update'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'uname -r'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'apk info -v'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'apk version'
 
 test_stty() {
   IFS=' '
@@ -68,9 +119,15 @@ verify_command() {
       /bin/echo "$@"
       ;;
     cat)
+      IFS='/'
+      set -- $2
       case "$2" in
-        /etc/system-release|/etc/issue|/etc/lsb-release|/etc/debian_version)
-          /bin/echo "$@"
+        etc)
+          case "$3" in
+            debian_version|fedora-release|oracle-release|centos-release|redhat-release|system-release|os-release|alpine-release|issue|lsb-release)
+              /bin/echo cat /$2/$3
+              ;;
+          esac
           ;;
       esac
       ;;
@@ -84,11 +141,18 @@ verify_command() {
     curl)
       /bin/echo curl --max-time 1 --retry 3 --noproxy 169.254.169.254 http://169.254.169.254/latest/meta-data/instance-id
       ;;
+    wget)
+      /bin/echo wget --tries=3 --timeout=1 --no-proxy -q -O - http://169.254.169.254/latest/meta-data/instance-id
+      ;;
     /sbin/ip)
       /bin/echo /sbin/ip -o addr
       ;;
     yum)
-      [ "$4" = "updateinfo" ] && /bin/echo "$@"
+      case "$4" in
+        updateinfo)
+          /bin/echo "$@"
+          ;;
+      esac
       ;;
     rpm)
       case "$2" in
@@ -107,6 +171,26 @@ verify_command() {
           ;;
         dist-upgrade)
           /bin/echo apt-get dist-upgrade --dry-run
+          ;;
+      esac
+      ;;
+    apk)
+      case "$2" in
+        update)
+          /bin/echo apk update
+          ;;
+        info)
+          /bin/echo apk info -v
+          ;;
+        version)
+          /bin/echo apk version
+          ;;
+      esac
+      ;;
+    sudo)
+      case "$3" in
+        apt-get)
+          /bin/echo sudo -S apt-get update
           ;;
       esac
       ;;
@@ -129,7 +213,10 @@ verify_command() {
             shift
           fi
           command=$(verify_command "$@")
-          [ -n "$command" ] && /bin/echo docker exec $options $container_id $command
+          if [ -n "$command" ]
+          then
+            /bin/echo docker exec $options $container_id $command
+          fi
           ;;
       esac
       ;;
@@ -148,7 +235,7 @@ else
 fi
 
 IFS=' '
-set -- $(printf '%s' "$(printf ';%s' "$@" | cut -c 2-)" | escape)
+set -- $(printf ';%s' "$@" | escape | cut -c 2-)
 
 env=$(verify_env "$@")
 if [ -n "$env" ]
@@ -159,7 +246,11 @@ fi
 
 IFS=' '
 set -- $(verify_command "$@")
-[ -n "$1" ] && exec_command "$@"
+
+if [ -n "$1" ]
+then
+  exec_command "$@"
+fi
 
 exit 126
 
