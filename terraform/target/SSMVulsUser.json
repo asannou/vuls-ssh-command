@@ -1,0 +1,30 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "ec2:DescribeInstances",
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "ssm:SendCommand",
+      "Resource": "arn:aws:ssm:ap-northeast-1:${account_id}:document/${document_name}"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "ssm:SendCommand",
+      "Resource": "arn:aws:ec2:ap-northeast-1:${account_id}:instance/*",
+      "Condition": {
+        "StringEquals": {
+          "ssm:resourceTag/Vuls": "1"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Action": "ssm:ListCommands",
+      "Resource": "*"
+    }
+  ]
+}

@@ -22,7 +22,7 @@
           "DOTSSH=/home/$USER/.ssh",
           "mkdir -m 700 $DOTSSH",
           "COMMAND=$DOTSSH/vuls-ssh-command.sh",
-          "curl -s -o $COMMAND Https://raw.githubusercontent.com/asannou/vuls-ssh-command/master/amazon-linux.sh",
+          "curl -s -o $COMMAND https://raw.githubusercontent.com/asannou/vuls-ssh-command/master/vuls-ssh-command.sh",
           "echo \"command=\\\"$COMMAND\\\" {{publickey}}\" > $DOTSSH/authorized_keys",
           "chmod 700 $COMMAND",
           "chown -R $USER:$USER $DOTSSH",
