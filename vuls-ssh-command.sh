@@ -133,7 +133,7 @@ verify_command() {
       ;;
     type)
       case "$2" in
-        curl|wget)
+        curl|wget|docker)
           /bin/echo "sh -c 'type $2'"
           ;;
       esac
