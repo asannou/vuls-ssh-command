@@ -9,7 +9,10 @@
     {
       "Effect": "Allow",
       "Action": "ssm:SendCommand",
-      "Resource": "arn:aws:ssm:ap-northeast-1:${account_id}:document/${document_name}"
+      "Resource": [
+        "arn:aws:ssm:ap-northeast-1:${account_id}:document/${document_name}",
+        "arn:aws:s3:::${bucket}"
+      ]
     },
     {
       "Effect": "Allow",
@@ -25,6 +28,11 @@
       "Effect": "Allow",
       "Action": "ssm:ListCommands",
       "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "s3:GetObject",
+      "Resource": "arn:aws:s3:::${bucket}/*"
     }
   ]
 }

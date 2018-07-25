@@ -2,18 +2,41 @@
 
 set -e
 
-DOCKER_IMAGE=vuls/vuls@sha256:61f3d7de6b3bc4753f15f3829149a318c77f21e94054ff4f45186062343f6dad
+export AWS_DEFAULT_REGION=ap-northeast-1
+
+DOCKER_IMAGE=vuls/vuls@sha256:6cfecadb1d5b17c32375a1a2e814e15955c140c67e338024db0c6e81c3560c80
+
+ACCOUNT_ID=$(aws sts get-caller-identity --output text --query Account)
+TARGET_ACCOUNT_ID=$1
+shift
+
+ROLE_ARN=arn:aws:iam::$TARGET_ACCOUNT_ID:role/VulsRole-$ACCOUNT_ID
+ROLE_SESSION_NAME=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
+BUCKET_NAME=vuls-ssm-output-$ACCOUNT_ID-$TARGET_ACCOUNT_ID
+
+assume_role() {
+  set -- $(aws sts assume-role --role-arn $ROLE_ARN --role-session-name $ROLE_SESSION_NAME --output text --query Credentials.[AccessKeyId,SecretAccessKey,SessionToken])
+  export AWS_ACCESS_KEY_ID=$1 AWS_SECRET_ACCESS_KEY=$2 AWS_SESSION_TOKEN=$3
+}
 
 describe_instances() {
   aws ec2 describe-instances --output text --filters 'Name=tag:Vuls,Values=1' --query 'Reservations[].Instances[].[InstanceId,Tags[?Key==`Name`].Value|[0]]'
 }
 
 send_command() {
-  aws ssm send-command --document-name CreateVulsUser --instance-ids $1 --parameters publickey="$2" --output text --query Command.CommandId
+  aws ssm send-command --document-name CreateVulsUser --instance-ids $1 --parameters publickey="$2" --output-s3-bucket-name $BUCKET_NAME --output text --query Command.CommandId
 }
 
-get_command_invocation() {
-  aws ssm get-command-invocation --command-id $1 --instance-id $2 --output text --query '[Status,StandardOutputContent]'
+list_commands() {
+  aws ssm list-commands --command-id $1 --instance-id $2 --output text --query 'Commands[0].Status'
+}
+
+get_object() {
+  aws s3 cp s3://$BUCKET_NAME/$1/$2/awsrunShellScript/runShellScript/stdout -
+}
+
+check_docker() {
+  ssh -tt -o ConnectionAttempts=3 -o ConnectTimeout=10 -o StrictHostKeyChecking=yes -o UserKnownHostsFile=ssh/known_hosts -i ssh/id_rsa vuls@$1 'stty cols 1000; type docker' > /dev/null 2>&1
 }
 
 fetch_nvd() {
@@ -33,6 +56,8 @@ fi
 cp /dev/null ssh/known_hosts
 cp $(dirname $0)/config.toml.default config.toml
 
+assume_role
+
 describe_instances | while read INSTANCE
 do
 
@@ -47,12 +72,12 @@ do
   while :
   do
     sleep 1
-    INVOCATION=$(get_command_invocation $COMMAND_ID $INSTANCE_ID)
-    IFS=$'\t'
-    set -- $INVOCATION
-    STATUS=$1
-    KNOWN_HOSTS="$2"
-    [ "$STATUS" = Success ] && break
+    STATUS=$(list_commands $COMMAND_ID $INSTANCE_ID)
+    if [ "$STATUS" = Success ]
+    then
+      KNOWN_HOSTS=$(get_object $COMMAND_ID $INSTANCE_ID)
+      break
+    fi
   done
 
   IFS=' '
@@ -65,6 +90,14 @@ do
 [servers.$NAME]
 host = "$HOST"
 __EOD__
+
+  if check_docker $HOST
+  then
+    cat <<__EOD__ >> config.toml
+[servers.$NAME.containers]
+includes = ["\${running}"]
+__EOD__
+  fi
 
 done
 

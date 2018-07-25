@@ -47,6 +47,7 @@ data "template_file" "ssm-vuls" {
   vars {
     account_id = "${data.aws_caller_identity.aws.account_id}"
     document_name = "${aws_ssm_document.vuls.name}"
+    bucket = "${aws_s3_bucket.vuls.bucket}"
   }
 }
 
@@ -54,5 +55,10 @@ resource "aws_ssm_document" "vuls" {
   name = "CreateVulsUser"
   document_type = "Command"
   content = "${file("CreateVulsUser.json")}"
+}
+
+resource "aws_s3_bucket" "vuls" {
+  bucket = "vuls-ssm-output-${var.vuls_account_id}-${data.aws_caller_identity.aws.account_id}"
+  acl = "private"
 }
 
