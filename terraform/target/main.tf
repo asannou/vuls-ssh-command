@@ -1,5 +1,9 @@
+variable "aws_region" {
+  type = "string"
+}
+
 provider "aws" {
-  region = "ap-northeast-1"
+  region = "${var.aws_region}"
 }
 
 data "aws_caller_identity" "aws" {}
@@ -8,7 +12,7 @@ variable "vuls_account_id" {
   type = "string"
 }
 
-variable "vuls_role_name" {
+variable "vuls_role" {
   type = "string"
 }
 
@@ -22,7 +26,7 @@ resource "aws_iam_role" "vuls" {
     {
       "Effect": "Allow",
       "Principal": {
-        "AWS": "arn:aws:iam::${var.vuls_account_id}:role/${var.vuls_role_name}"
+        "AWS": "arn:aws:iam::${var.vuls_account_id}:role/${var.vuls_role}"
       },
       "Action": "sts:AssumeRole"
     }
@@ -45,6 +49,7 @@ resource "aws_iam_role_policy_attachment" "ssm-vuls" {
 data "template_file" "ssm-vuls" {
   template = "${file("SSMVulsUser.json")}"
   vars {
+    region = "${var.aws_region}"
     account_id = "${data.aws_caller_identity.aws.account_id}"
     document_name = "${aws_ssm_document.vuls.name}"
     bucket = "${aws_s3_bucket.vuls.bucket}"

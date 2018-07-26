@@ -1,5 +1,9 @@
+variable "aws_region" {
+  type = "string"
+}
+
 provider "aws" {
-  region = "ap-northeast-1"
+  region = "${var.aws_region}"
 }
 
 data "aws_caller_identity" "aws" {}
