@@ -20,7 +20,7 @@ assume_role() {
 }
 
 describe_instances() {
-  aws ec2 describe-instances --output text --filters 'Name=tag:Vuls,Values=1' --query 'Reservations[].Instances[].[InstanceId,Tags[?Key==`Name`].Value|[0]]'
+  aws ec2 describe-instances --output text --filters 'Name=instance-state-name,Values=running' 'Name=tag:Vuls,Values=1' --query 'Reservations[].Instances[].[InstanceId,Tags[?Key==`Name`].Value|[0]]'
 }
 
 send_command() {
@@ -40,11 +40,11 @@ check_docker() {
 }
 
 fetch_nvd() {
-  docker run --rm -it -v $PWD:/vuls -v $PWD/go-cve-dictionary-log:/var/log/vuls vuls/go-cve-dictionary fetchnvd "$@"
+  docker run --rm -i -v $PWD:/vuls -v $PWD/go-cve-dictionary-log:/var/log/vuls vuls/go-cve-dictionary fetchnvd "$@"
 }
 
 run_vuls() {
-  docker run --rm -it -v $PWD/ssh:/root/.ssh:ro -v $PWD:/vuls -v $PWD/log:/var/log/vuls $DOCKER_IMAGE "$@"
+  docker run --rm -i -v $PWD/ssh:/root/.ssh:ro -v $PWD:/vuls -v $PWD/log:/var/log/vuls $DOCKER_IMAGE "$@"
 }
 
 if [ ! -d ssh ]
