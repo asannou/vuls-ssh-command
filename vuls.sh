@@ -87,14 +87,14 @@ do
   echo "$KNOWN_HOSTS" >> ssh/known_hosts
 
   cat <<__EOD__ >> config.toml
-[servers.$NAME]
+[servers."$NAME"]
 host = "$HOST"
 __EOD__
 
   if check_docker $HOST
   then
     cat <<__EOD__ >> config.toml
-[servers.$NAME.containers]
+[servers."$NAME".containers]
 includes = ["\${running}"]
 __EOD__
   fi
