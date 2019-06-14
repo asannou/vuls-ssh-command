@@ -74,10 +74,35 @@ resource "aws_iam_role_policy_attachment" "ssm-vuls" {
   policy_arn = "${aws_iam_policy.ssm-vuls.arn}"
 }
 
+locals {
+  create_vuls_user = {
+    schemaVersion = "2.0"
+    description = "Create a new user for Vuls."
+    parameters = {
+      publickey = {
+        type = "String"
+        description = "(Required) SSH public key"
+        default = ""
+        displayType = "textarea"
+        allowedPattern = "^[ +\\-./=@0-9A-Za-z]+$"
+      }
+    }
+    mainSteps = [
+      {
+        action = "aws:runShellScript",
+        name = "runShellScript",
+        inputs = {
+          runCommand = "${split("\n", file("create_vuls_user.sh"))}"
+        }
+      }
+    ]
+  }
+}
+
 resource "aws_ssm_document" "vuls" {
   name = "CreateVulsUser"
   document_type = "Command"
-  content = "${file("CreateVulsUser.json")}"
+  content = "${jsonencode(local.create_vuls_user)}"
 }
 
 resource "aws_s3_bucket" "vuls" {
