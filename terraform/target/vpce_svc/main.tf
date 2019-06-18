@@ -1,3 +1,7 @@
+variable "vuls_account_id" {
+  default = ""
+}
+
 variable "subnet_ids" {
   default = []
 }
@@ -24,6 +28,16 @@ data "aws_instances" "target" {
 data "aws_instance" "target" {
   count = "${length(data.aws_instances.target.ids)}"
   instance_id = "${data.aws_instances.target.ids[count.index]}"
+}
+
+resource "aws_vpc_endpoint_service" "vpce-service" {
+  acceptance_required = true
+  network_load_balancer_arns = ["${aws_lb.nlb.arn}"]
+}
+
+resource "aws_vpc_endpoint_service_allowed_principal" "principal" {
+  vpc_endpoint_service_id = "${aws_vpc_endpoint_service.vpce-service.id}"
+  principal_arn = "arn:aws:iam::${var.vuls_account_id}:root"
 }
 
 resource "aws_lb" "nlb" {
@@ -98,6 +112,14 @@ resource "aws_network_interface_sg_attachment" "sg_attachment" {
   count = "${length(data.aws_instances.target.ids)}"
   network_interface_id = "${data.aws_instance.target.*.network_interface_id[count.index]}"
   security_group_id = "${aws_security_group.nlb.id}"
+}
+
+output "vpce-service.id" {
+  value = "${aws_vpc_endpoint_service.vpce-service.id}"
+}
+
+output "vpce-service.service_name" {
+  value = "${aws_vpc_endpoint_service.vpce-service.service_name}"
 }
 
 output "nlb.arn" {
