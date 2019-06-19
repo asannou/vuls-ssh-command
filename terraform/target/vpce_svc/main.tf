@@ -33,6 +33,9 @@ data "aws_instance" "target" {
 resource "aws_vpc_endpoint_service" "vpce-service" {
   acceptance_required = true
   network_load_balancer_arns = ["${aws_lb.nlb.arn}"]
+  provisioner "local-exec" {
+    command = "aws ec2 create-tags --resources ${aws_vpc_endpoint_service.vpce-service.id} --tags Key=Name,Value=vuls"
+  }
 }
 
 resource "aws_vpc_endpoint_service_allowed_principal" "principal" {
