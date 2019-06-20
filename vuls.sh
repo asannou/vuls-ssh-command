@@ -25,7 +25,7 @@ describe_instances() {
 }
 
 send_command() {
-  aws ssm send-command --document-name CreateVulsUser --instance-ids $1 --parameters publickey="$2" --output-s3-bucket-name $BUCKET_NAME --output text --query Command.CommandId
+  aws ssm send-command --document-name CreateVulsUser --instance-ids $1 --parameters publickey="$2" --output-s3-bucket-name $BUCKET_NAME --output text --query Command.CommandId || true
 }
 
 list_commands() {
@@ -37,7 +37,7 @@ get_object() {
 }
 
 check_docker() {
-  ssh -tt -o ConnectionAttempts=3 -o ConnectTimeout=10 -o StrictHostKeyChecking=yes -o UserKnownHostsFile=ssh/known_hosts -i ssh/id_rsa vuls@$1 'stty cols 1000; type docker' > /dev/null 2>&1
+  ssh -n -o ConnectionAttempts=3 -o ConnectTimeout=10 -o StrictHostKeyChecking=yes -o UserKnownHostsFile=ssh/known_hosts -i ssh/id_rsa vuls@$1 'stty cols 1000; type docker' > /dev/null 2>&1
 }
 
 fetch_nvd() {
@@ -70,10 +70,11 @@ do
   NAME=$2
   PUBLIC_IP_ADDRESS=$3
 
-  [ "$PUBLIC_IP_ADDRESS" = None ] && continue
+  [ -z "$PUBLIC_IP_ADDRESS" ] || [ "$PUBLIC_IP_ADDRESS" = None ] && continue
 
   PUBLIC_KEY="$(cat ssh/id_rsa.pub)"
   COMMAND_ID=$(send_command $INSTANCE_ID "$PUBLIC_KEY")
+  [ -z "$COMMAND_ID" ] && continue
 
   while :
   do
