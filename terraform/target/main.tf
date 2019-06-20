@@ -32,13 +32,13 @@ data "aws_iam_policy_document" "vuls" {
   }
 }
 
-resource "aws_iam_policy" "ssm-vuls" {
-  name = "SSMVulsUser"
+resource "aws_iam_policy" "vuls-ssm" {
+  name = "VulsSSMAccess"
   path = "/"
-  policy = "${data.aws_iam_policy_document.ssm-vuls.json}"
+  policy = "${data.aws_iam_policy_document.vuls-ssm.json}"
 }
 
-data "aws_iam_policy_document" "ssm-vuls" {
+data "aws_iam_policy_document" "vuls-ssm" {
   statement {
     actions = ["ec2:DescribeInstances"]
     resources = ["*"]
@@ -69,9 +69,46 @@ data "aws_iam_policy_document" "ssm-vuls" {
   }
 }
 
-resource "aws_iam_role_policy_attachment" "ssm-vuls" {
+resource "aws_iam_role_policy_attachment" "vuls-ssm" {
   role = "${aws_iam_role.vuls.name}"
-  policy_arn = "${aws_iam_policy.ssm-vuls.arn}"
+  policy_arn = "${aws_iam_policy.vuls-ssm.arn}"
+}
+
+resource "aws_iam_policy" "vuls-privatelink" {
+  name = "VulsPrivateLink"
+  path = "/"
+  policy = "${data.aws_iam_policy_document.vuls-privatelink.json}"
+}
+
+data "aws_iam_policy_document" "vuls-privatelink" {
+  statement {
+    actions = [
+      "ec2:DescribeInstances",
+      "ec2:DescribeVpcEndpointServiceConfigurations"
+    ]
+    resources = ["*"]
+  }
+  statement {
+    actions = ["ec2:AcceptVpcEndpointConnections"]
+    resources = ["*"]
+    condition {
+      test = "StringEquals"
+      variable = "ec2:ResourceTag/Name"
+      values = ["vuls"]
+    }
+  }
+  statement {
+    actions = [
+      "elasticloadbalancing:DescribeListeners",
+      "elasticloadbalancing:DescribeTargetHealth"
+    ]
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "vuls-privatelink" {
+  role = "${aws_iam_role.vuls.name}"
+  policy_arn = "${aws_iam_policy.vuls-privatelink.arn}"
 }
 
 locals {
