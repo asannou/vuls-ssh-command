@@ -5,6 +5,7 @@ set -e
 export AWS_DEFAULT_REGION=ap-northeast-1
 
 DOCKER_IMAGE=vuls/vuls@sha256:6cfecadb1d5b17c32375a1a2e814e15955c140c67e338024db0c6e81c3560c80
+DOCKER_CVE_IMAGE=vuls/go-cve-dictionary
 
 ACCOUNT_ID=$(aws sts get-caller-identity --output text --query Account)
 TARGET_ACCOUNT_ID=$1
@@ -20,7 +21,7 @@ assume_role() {
 }
 
 describe_instances() {
-  aws ec2 describe-instances --output text --filters 'Name=instance-state-name,Values=running' 'Name=tag:Vuls,Values=1' --query 'Reservations[].Instances[].[InstanceId,Tags[?Key==`Name`].Value|[0]]'
+  aws ec2 describe-instances --output text --filters 'Name=instance-state-name,Values=running' 'Name=tag:Vuls,Values=1' --query 'Reservations[].Instances[].[InstanceId,Tags[?Key==`Name`].Value|[0],PublicIpAddress]'
 }
 
 send_command() {
@@ -40,7 +41,9 @@ check_docker() {
 }
 
 fetch_nvd() {
-  docker run --rm -i -v $PWD:/vuls -v $PWD/go-cve-dictionary-log:/var/log/vuls vuls/go-cve-dictionary fetchnvd "$@"
+  docker pull $DOCKER_CVE_IMAGE
+  docker run --rm -i -v $PWD:/vuls -v $PWD/go-cve-dictionary-log:/var/log/vuls $DOCKER_CVE_IMAGE fetchnvd "$@"
+  docker run --rm -i -v $PWD:/vuls -v $PWD/go-cve-dictionary-log:/var/log/vuls $DOCKER_CVE_IMAGE fetchjvn "$@"
 }
 
 run_vuls() {
@@ -65,6 +68,9 @@ do
   set -- $INSTANCE
   INSTANCE_ID=$1
   NAME=$2
+  PUBLIC_IP_ADDRESS=$3
+
+  [ "$PUBLIC_IP_ADDRESS" = None ] && continue
 
   PUBLIC_KEY="$(cat ssh/id_rsa.pub)"
   COMMAND_ID=$(send_command $INSTANCE_ID "$PUBLIC_KEY")
@@ -77,6 +83,9 @@ do
     then
       KNOWN_HOSTS=$(get_object $COMMAND_ID $INSTANCE_ID)
       break
+    elif [ "$STATUS" = Failed ]
+    then
+      exit 1
     fi
   done
 
