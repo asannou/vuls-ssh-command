@@ -91,11 +91,6 @@ data "aws_iam_policy_document" "vuls-privatelink" {
   statement {
     actions = ["ec2:AcceptVpcEndpointConnections"]
     resources = ["*"]
-    condition {
-      test = "StringEquals"
-      variable = "ec2:ResourceTag/Name"
-      values = ["vuls"]
-    }
   }
   statement {
     actions = [
