@@ -21,4 +21,8 @@ ls /etc/redhat-release && printf '%s\n' $USER' ALL=(ALL) NOPASSWD:/usr/bin/yum -
 
 ls /etc/debian_version && printf '%s\n' $USER' ALL=(ALL) NOPASSWD: /usr/bin/apt-get update' 'Defaults:'$USER' env_keep="http_proxy https_proxy HTTP_PROXY HTTPS_PROXY"' > /etc/sudoers.d/vuls
 
-type docker && groupadd docker || usermod -aG docker $USER
+if type docker
+then
+  groupadd docker
+  usermod -aG docker $USER
+fi
