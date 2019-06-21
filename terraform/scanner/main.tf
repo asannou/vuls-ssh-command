@@ -19,15 +19,14 @@ variable "vuls_role" {
 resource "aws_iam_policy" "vuls" {
   count = "${length(var.target_account_ids)}"
   name = "STSAssumeRoleVuls-${var.target_account_ids[count.index]}"
-  policy = "${data.template_file.vuls.*.rendered[count.index]}"
+  policy = "${data.aws_iam_policy_document.vuls.*.json[count.index]}"
 }
 
-data "template_file" "vuls" {
+data "aws_iam_policy_document" "vuls" {
   count = "${length(var.target_account_ids)}"
-  template = "${file("STSAssumeRoleVuls.json")}"
-  vars {
-    account_id = "${data.aws_caller_identity.aws.account_id}"
-    target_account_id = "${var.target_account_ids[count.index]}"
+  statement {
+    actions = ["sts:AssumeRole"]
+    resources = ["arn:aws:iam::${var.target_account_ids[count.index]}:role/VulsRole-${data.aws_caller_identity.aws.account_id}"]
   }
 }
 
