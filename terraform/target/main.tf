@@ -89,8 +89,8 @@ data "aws_iam_policy_document" "vuls-privatelink" {
     resources = ["*"]
   }
   statement {
-    actions = ["ec2:AcceptVpcEndpointConnections"]
-    resources = ["*"]
+    actions = ["lambda:InvokeFunction"]
+    resources = ["${aws_lambda_function.lambda.arn}"]
   }
   statement {
     actions = [
@@ -143,3 +143,62 @@ resource "aws_s3_bucket" "vuls" {
   force_destroy = true
 }
 
+resource "aws_lambda_function" "lambda" {
+  filename = "${data.archive_file.lambda.output_path}"
+  function_name = "vuls-accept-vpc-endpoint-connections"
+  role = "${aws_iam_role.lambda.arn}"
+  handler = "vuls-accept-vpc-endpoint-connections.handler"
+  runtime = "nodejs8.10"
+  timeout = "60"
+  source_code_hash = "${data.archive_file.lambda.output_base64sha256}"
+  environment {
+    variables = {
+      SERVICE_IDS = "${join(" ", local.vpce_svc_ids)}"
+    }
+  }
+  tags {
+    Name = "vuls"
+  }
+}
+
+data "archive_file" "lambda" {
+  type = "zip"
+  source_file = "${path.module}/vuls-accept-vpc-endpoint-connections.js"
+  output_path = "${path.module}/vuls-accept-vpc-endpoint-connections.zip"
+}
+
+resource "aws_iam_role" "lambda" {
+  name = "LambdaRoleVulsAcceptVpcEndpointConnections"
+  path = "/"
+  assume_role_policy = "${data.aws_iam_policy_document.lambda-role.json}"
+}
+
+data "aws_iam_policy_document" "lambda-role" {
+  statement {
+    effect = "Allow"
+    actions = ["sts:AssumeRole"]
+    principals {
+      type = "Service"
+      identifiers = ["lambda.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "lambda" {
+  role = "${aws_iam_role.lambda.name}"
+  policy_arn = "${aws_iam_policy.lambda.arn}"
+}
+
+resource "aws_iam_policy" "lambda" {
+  name = "AcceptVpcEndpointConnections"
+  path = "/"
+  policy = "${data.aws_iam_policy_document.lambda.json}"
+}
+
+data "aws_iam_policy_document" "lambda" {
+  statement {
+    effect = "Allow"
+    actions = ["ec2:AcceptVpcEndpointConnections"]
+    resources = ["*"]
+  }
+}

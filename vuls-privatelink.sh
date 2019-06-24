@@ -24,15 +24,15 @@ assume_role() {
     --role-session-name $ROLE_SESSION_NAME \
     --output text \
     --query Credentials.[AccessKeyId,SecretAccessKey,SessionToken])
-  ASSUMED_AWS_ACCESS_KEY_ID=$1
-  ASSUMED_AWS_SECRET_ACCESS_KEY=$2
-  ASSUMED_AWS_SESSION_TOKEN=$3
+  ACCESS_KEY_ID=$1
+  SECRET_ACCESS_KEY=$2
+  SESSION_TOKEN=$3
 }
 
 assumed_aws() {
-  AWS_ACCESS_KEY_ID=$ASSUMED_AWS_ACCESS_KEY_ID \
-  AWS_SECRET_ACCESS_KEY=$ASSUMED_AWS_SECRET_ACCESS_KEY \
-  AWS_SESSION_TOKEN=$ASSUMED_AWS_SESSION_TOKEN \
+  AWS_ACCESS_KEY_ID=$ACCESS_KEY_ID \
+  AWS_SECRET_ACCESS_KEY=$SECRET_ACCESS_KEY \
+  AWS_SESSION_TOKEN=$SESSION_TOKEN \
     aws "$@"
 }
 
@@ -70,11 +70,14 @@ create_vpce() {
 }
 
 accept_vpce() {
+  outfile=$(mktemp)
   assumed_aws --output text \
-    ec2 accept-vpc-endpoint-connections \
-    --service-id $1 \
-    --vpc-endpoint-ids $2 \
-    --query 'Unsuccessful[]'
+    lambda invoke \
+    --function-name vuls-accept-vpc-endpoint-connections \
+    --payload '{"serviceId": "'$1'", "vpcEndpointIds": ["'$2'"]}' \
+    $outfile > /dev/null
+  jp.py -f $outfile 'Unsuccessful[]'
+  rm $outfile
 }
 
 describe_vpce_state() {
@@ -173,7 +176,7 @@ create_vpces() {
 
     create_tag $vpce_id
     unsuccessful=$(accept_vpce $vpce_svc_id $vpce_id)
-    test -n "$unsuccessful" && continue
+    test "$unsuccessful" != '[]' && continue
     echo "$vpce_id $vpce_name $vpce_svc_lb"
   done | \
   while read vpce
