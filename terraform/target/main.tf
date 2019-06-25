@@ -118,6 +118,13 @@ locals {
         displayType = "textarea"
         allowedPattern = "^[ +\\-./=@0-9A-Za-z]+$"
       }
+      sshcommand = {
+        type = "String"
+        description = "SSH Command S3 URI"
+        default = "s3://${aws_s3_bucket_object.vuls.bucket}/${aws_s3_bucket_object.vuls.key}"
+        displayType = "textarea"
+        allowedPattern = "^[\\-./=@0-9:A-Za-z]+$"
+      }
     }
     mainSteps = [
       {
@@ -138,9 +145,16 @@ resource "aws_ssm_document" "vuls" {
 }
 
 resource "aws_s3_bucket" "vuls" {
-  bucket = "vuls-ssm-output-${var.vuls_account_id}-${data.aws_caller_identity.aws.account_id}"
+  bucket = "vuls-ssm-${var.vuls_account_id}-${data.aws_caller_identity.aws.account_id}"
   acl = "private"
   force_destroy = true
+}
+
+resource "aws_s3_bucket_object" "vuls" {
+  bucket = "${aws_s3_bucket.vuls.bucket}"
+  key = "vuls-ssh-command.sh"
+  source = "../../vuls-ssh-command.sh"
+  etag = "${filemd5("../../vuls-ssh-command.sh")}"
 }
 
 resource "aws_lambda_function" "lambda" {

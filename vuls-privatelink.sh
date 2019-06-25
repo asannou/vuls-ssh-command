@@ -16,7 +16,7 @@ VPC_ID=$(curl -s http://169.254.169.254/latest/meta-data/network/interfaces/macs
 SUBNET_ID=$(curl -s http://169.254.169.254/latest/meta-data/network/interfaces/macs/${MAC}subnet-id)
 ROLE_ARN=arn:aws:iam::$TARGET_ACCOUNT_ID:role/VulsRole-$ACCOUNT_ID
 ROLE_SESSION_NAME=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
-BUCKET_NAME=vuls-ssm-output-$ACCOUNT_ID-$TARGET_ACCOUNT_ID
+BUCKET_NAME=vuls-ssm-$ACCOUNT_ID-$TARGET_ACCOUNT_ID
 
 assume_role() {
   set -- $(aws sts assume-role \
@@ -193,14 +193,11 @@ send_public_key() {
   test -z "$command_id" && return 1
   for i in $(seq 10)
   do
-    sleep 1
+    sleep 5
     status=$(list_commands $command_id $1)
     if [ "$status" = Success ]
     then
-      known_host=$(get_object $command_id $1)
-      set -- $known_host
-      shift
-      echo $@
+      get_object $command_id $1
       return
     elif [ "$status" = Failed ]
     then
@@ -301,8 +298,7 @@ assume_role
 vpce_ids=$(make_config || exit 1)
 run_cve fetchnvd -last2y
 run_cve fetchjvn -last2y
-run_vuls scan
-run_vuls report "$@"
+run_vuls scan && run_vuls report "$@" || true
 
 delete_vpces $vpce_ids
 
