@@ -40,7 +40,7 @@ resource "aws_iam_policy" "vuls-ssm" {
 
 data "aws_iam_policy_document" "vuls-ssm" {
   statement {
-    actions = ["ec2:DescribeInstances"]
+    actions = ["ec2:DescribeTags"]
     resources = ["*"]
   }
   statement {

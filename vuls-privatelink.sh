@@ -18,6 +18,8 @@ ROLE_ARN=arn:aws:iam::$TARGET_ACCOUNT_ID:role/VulsRole-$ACCOUNT_ID
 ROLE_SESSION_NAME=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
 BUCKET_NAME=vuls-ssm-$ACCOUNT_ID-$TARGET_ACCOUNT_ID
 
+KNOWN_HOSTS_TEMP=$(mktemp)
+
 assume_role() {
   set -- $(aws sts assume-role \
     --role-arn $ROLE_ARN \
@@ -87,14 +89,17 @@ describe_vpce_state() {
     --query 'VpcEndpoints[0].State'
 }
 
-wait_vpce() {
-  for i in $(seq 10)
+wait_vpces() {
+  for vpce_id in $@
   do
-    state=$(describe_vpce_state $1)
-    test "$state" = 'available' && return
-    sleep 30
+    for i in $(seq 10)
+    do
+      state=$(describe_vpce_state $vpce_id)
+      test "$state" = 'available' && continue 2
+      sleep 30
+    done
+    return 1
   done
-  return 1
 }
 
 delete_vpces() {
@@ -118,29 +123,29 @@ describe_target() {
     --query 'TargetHealthDescriptions[0].[Target.Id,TargetHealth.State]'
 }
 
-describe_instance() {
+describe_tag() {
   assumed_aws --output text \
-    ec2 describe-instances \
-    --instance-ids $1 \
-    --filters 'Name=tag:Vuls,Values=1' \
-    --query 'Reservations[].Instances[].[InstanceId,Tags[?Key==`Name`].Value|[0]]'
+    ec2 describe-tags \
+    --filters "Name=resource-id,Values=$1" "Name=key,Values=$2" \
+    --query 'Tags[0].Value'
 }
 
 send_command() {
+  publickey="$1"
+  shift
   assumed_aws --output text \
     ssm send-command \
     --document-name CreateVulsUser \
-    --instance-ids $1 \
-    --parameters publickey="$2" \
+    --parameters publickey="$publickey" \
+    --instance-ids $@ \
     --output-s3-bucket-name $BUCKET_NAME \
     --query 'Command.CommandId' || true
 }
 
-list_commands() {
+list_command() {
   assumed_aws --output text \
     ssm list-commands \
     --command-id $1 \
-    --instance-id $2 \
     --query 'Commands[0].Status'
 }
 
@@ -178,31 +183,29 @@ create_vpces() {
     unsuccessful=$(accept_vpce $vpce_svc_id $vpce_id)
     test "$unsuccessful" != '[]' && continue
     echo "$vpce_id $vpce_name $vpce_svc_lb"
-  done | \
-  while read vpce
+  done
+}
+
+get_known_hosts_ids() {
+  cat $KNOWN_HOSTS_TEMP | while read host
   do
-    set -- $vpce
-    wait_vpce $1 || continue
-    echo $vpce
+    set -- $host
+    printf '%s ' $3
   done
 }
 
 send_public_key() {
   public_key="$(cat ssh/id_rsa.pub)"
-  command_id=$(send_command $1 "$public_key")
-  test -z "$command_id" && return 1
+  send_command "$public_key" $(get_known_hosts_ids)
+}
+
+wait_command() {
   for i in $(seq 10)
   do
+    status=$(list_command $1)
+    test "$status" = 'Success' && return
+    test "$status" = 'Failed' && return 1
     sleep 5
-    status=$(list_commands $command_id $1)
-    if [ "$status" = Success ]
-    then
-      get_object $command_id $1
-      return
-    elif [ "$status" = Failed ]
-    then
-      return 1
-    fi
   done
   return 1
 }
@@ -222,7 +225,7 @@ includes = ["\${running}"]
 __EOD__
 }
 
-make_config() {
+make_server_configs() {
   create_vpces | while read vpce
   do
     set -- $vpce
@@ -238,32 +241,62 @@ make_config() {
       target_group=$2
 
       set -- $(describe_target $target_group)
-      target=$1
+      id=$1
       state=$2
 
       if [ "$state" = 'healthy' ]
       then
-        IFS=$'\t'
-        set -- $(describe_instance $target)
-        IFS=$' \t\n'
-        id=$1
-        name=$2
-        if [ -n "$id" ]
+        if [ "$(describe_tag $id 'Vuls')" = "1" ]
         then
-          public_key="$(cat ssh/id_rsa.pub)"
-          known_host=$(send_public_key $id "$public_key")
-          test -z "$known_host" && continue
-          echo "[$vpce_name]:$port $known_host" >> ssh/known_hosts
+          name="$(describe_tag $id 'Name')"
           test -z "$name" && name=$id
+          echo "$vpce_name $port $id $name" >> $KNOWN_HOSTS_TEMP
           make_server_config $name $vpce_name $port >> config.toml
-          if check_docker $vpce_name $port
-          then
-            make_containers_config $name >> config.toml
-          fi
         fi
       fi
     done
   done
+}
+
+make_containers_configs() {
+  cat $KNOWN_HOSTS_TEMP | while read host
+  do
+    set -- $host
+    hostname=$1
+    port=$2
+    name=$4
+    if check_docker $hostname $port
+    then
+      make_containers_config $name
+    fi
+  done >> config.toml
+}
+
+make_known_hosts() {
+  command_id=$1
+  cat $KNOWN_HOSTS_TEMP | while read host
+  do
+    set -- $host
+    hostname=$1
+    port=$2
+    id=$3
+    hostkey=$(get_object $command_id $id)
+    echo "[$hostname]:$port $hostkey"
+  done > ssh/known_hosts
+}
+
+setup() {
+  vpce_ids=$(make_server_configs)
+  echo $vpce_ids
+
+  command_id=$(send_public_key)
+  test -z "$command_id" && return
+
+  wait_vpces $vpce_ids
+  wait_command $command_id || return
+
+  make_known_hosts $command_id
+  make_containers_configs
 }
 
 run_cve() {
@@ -290,15 +323,15 @@ then
   ssh-keygen -N '' -f ssh/id_rsa
 fi
 
-cp /dev/null ssh/known_hosts
 cp $(dirname $0)/config.toml.default config.toml
 
 assume_role
 
-vpce_ids=$(make_config || exit 1)
+vpce_ids=$(setup)
 run_cve fetchnvd -last2y
 run_cve fetchjvn -last2y
 run_vuls scan && run_vuls report "$@" || true
 
 delete_vpces $vpce_ids
+rm $KNOWN_HOSTS_TEMP
 
