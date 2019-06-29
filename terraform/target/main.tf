@@ -150,11 +150,16 @@ resource "aws_s3_bucket" "vuls" {
   force_destroy = true
 }
 
+module "vuls-ssh-command" {
+  source = "github.com/asannou/terraform-download-file"
+  url = "https://github.com/asannou/vuls-ssh-command/raw/master/vuls-ssh-command.sh"
+}
+
 resource "aws_s3_bucket_object" "vuls" {
   bucket = "${aws_s3_bucket.vuls.bucket}"
   key = "vuls-ssh-command.sh"
-  source = "../../vuls-ssh-command.sh"
-  etag = "${filemd5("../../vuls-ssh-command.sh")}"
+  content = "${module.vuls-ssh-command.content}"
+  etag = "${md5(module.vuls-ssh-command.content)}"
 }
 
 resource "aws_lambda_function" "lambda" {
