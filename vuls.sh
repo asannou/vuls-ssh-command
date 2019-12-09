@@ -4,8 +4,9 @@ set -e
 
 export AWS_DEFAULT_REGION=ap-northeast-1
 
-DOCKER_IMAGE=vuls/vuls@sha256:6cfecadb1d5b17c32375a1a2e814e15955c140c67e338024db0c6e81c3560c80
+DOCKER_IMAGE=vuls/vuls:0.9.1
 DOCKER_CVE_IMAGE=vuls/go-cve-dictionary
+DOCKER_OVAL_IMAGE=vuls/goval-dictionary
 
 ACCOUNT_ID=$(aws sts get-caller-identity --output text --query Account)
 TARGET_ACCOUNT_ID=$1
@@ -40,10 +41,15 @@ check_docker() {
   ssh -n -o ConnectionAttempts=3 -o ConnectTimeout=10 -o StrictHostKeyChecking=yes -o UserKnownHostsFile=ssh/known_hosts -i ssh/id_rsa vuls@$1 'stty cols 1000; type docker' > /dev/null 2>&1
 }
 
-fetch_nvd() {
+fetch_cve() {
   docker pull $DOCKER_CVE_IMAGE
   docker run --rm -i -v $PWD:/vuls -v $PWD/go-cve-dictionary-log:/var/log/vuls $DOCKER_CVE_IMAGE fetchnvd "$@"
   docker run --rm -i -v $PWD:/vuls -v $PWD/go-cve-dictionary-log:/var/log/vuls $DOCKER_CVE_IMAGE fetchjvn "$@"
+}
+
+fetch_oval() {
+  docker pull $DOCKER_OVAL_IMAGE
+  docker run --rm -i -v $PWD:/vuls -v $PWD/goval-dictionary-log:/var/log/vuls $DOCKER_OVAL_IMAGE "$@"
 }
 
 run_vuls() {
@@ -104,14 +110,20 @@ __EOD__
   if check_docker $HOST
   then
     cat <<__EOD__ >> config.toml
-[servers."$NAME".containers]
-includes = ["\${running}"]
+containerType = "docker"
+containersIncluded = ["\${running}"]
 __EOD__
   fi
 
 done
 
-fetch_nvd -last2y
+fetch_cve -last2y
+fetch_oval fetch-debian 7 8 9 10
+fetch_oval fetch-redhat 5 6 7
+fetch_oval fetch-ubuntu 12 14 16 18 19
+fetch_oval fetch-alpine 3.3 3.4 3.5 3.6 3.7 3.8 3.9 3.10
+fetch_oval fetch-amazon
+
 run_vuls scan
 run_vuls report "$@"
 

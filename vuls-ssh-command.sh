@@ -10,47 +10,34 @@
 # stty cols 1000; ls /etc/system-release
 # stty cols 1000; cat /etc/system-release
 # stty cols 1000; type curl
-# stty cols 1000; curl --max-time 1 --retry 3 --noproxy 169.254.169.254 http://169.254.169.254/latest/meta-data/instance-id
+# stty cols 1000; curl --max-time 1 --noproxy 169.254.169.254 http://169.254.169.254/latest/meta-data/instance-id
 # stty cols 1000; /sbin/ip -o addr
 # stty cols 1000; uname -r
-# stty cols 1000; rpm -qa --queryformat "%{NAME} %{EPOCH} %{VERSION} %{RELEASE} %{ARCH}
-# "
+# stty cols 1000; rpm -qa --queryformat "%{NAME} %{EPOCH} %{VERSION} %{RELEASE} %{ARCH}\n"
 # stty cols 1000; rpm -q --last kernel
-# stty cols 1000; repoquery --all --pkgnarrow=updates --qf="%{NAME} %{EPOCH} %{VERSION} %{RELEASE} %{REPO}"
-# stty cols 1000; yum --color=never --security updateinfo list updates
-# stty cols 1000; yum --color=never --security updateinfo updates
-
-# stty cols 1000; ls /etc/debian_version
-# stty cols 1000; cat /etc/issue
-# stty cols 1000; lsb_release -ir
-# stty cols 1000; type curl
-# stty cols 1000; curl --max-time 1 --retry 3 --noproxy 169.254.169.254 http://169.254.169.254/latest/meta-data/instance-id
-# stty cols 1000; /sbin/ip -o addr
-# stty cols 1000; uname -r
-# stty cols 1000; test -f /var/run/reboot-required
-# stty cols 1000; dpkg-query -W -f="\${binary:Package},\${db:Status-Abbrev},\${Version},\${Source},\${source:Version}\n"
-# stty cols 1000; sudo -S apt-get update
-# stty cols 1000; LANGUAGE=en_US.UTF-8 apt-get dist-upgrade --dry-run
-# stty cols 1000; LANGUAGE=en_US.UTF-8 apt-cache policy
+# stty cols 1000; yum makecache --assumeyes
+# stty cols 1000; repoquery --version | grep dnf
+# stty cols 1000; repoquery --all --pkgnarrow=updates --qf='%{NAME} %{EPOCH} %{VERSION} %{RELEASE} %{REPO}'
 
 # stty cols 1000; docker ps --format '{{.ID}} {{.Names}} {{.Image}}'
-# stty cols 1000; docker ps --filter 'status=exited' --format '{{.ID}} {{.Names}} {{.Image}}'
 # stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'ls /etc/debian_version'
 # stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'ls /etc/fedora-release'
 # stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'ls /etc/oracle-release'
 # stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'ls /etc/centos-release'
-# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'cat /etc/centos-release'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'ls /etc/redhat-release'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'ls /etc/system-release'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'cat /etc/system-release'
 # stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'type curl'
-# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'curl --max-time 1 --retry 3 --noproxy 169.254.169.254 http://169.254.169.254/latest/meta-data/instance-id'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'curl --max-time 1 --noproxy 169.254.169.254 http://169.254.169.254/latest/meta-data/instance-id'
 # stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c '/sbin/ip -o addr'
 # stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'uname -r'
-# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'rpm -qa --queryformat "%{NAME} %{EPOCHNUM} %{VERSION} %{RELEASE} %{ARCH}
-# "'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'rpm -qa --queryformat "%{NAME} %{EPOCH} %{VERSION} %{RELEASE} %{ARCH}\n"'
 # stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'rpm -q --last kernel'
-# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'repoquery --all --pkgnarrow=updates --qf="%{NAME} %{EPOCH} %{VERSION} %{RELEASE} %{REPO}"'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'yum makecache --assumeyes'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'repoquery --version | grep dnf'
+# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'repoquery --all --pkgnarrow=updates --qf='%{NAME} %{EPOCH} %{VERSION} %{RELEASE} %{REPO}''
 
 # stty cols 1000; docker ps --format '{{.ID}} {{.Names}} {{.Image}}'
-# stty cols 1000; docker ps --filter 'status=exited' --format '{{.ID}} {{.Names}} {{.Image}}'
 # stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'ls /etc/debian_version'
 # stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'cat /etc/issue'
 # stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'lsb_release -ir'
@@ -63,12 +50,8 @@
 # stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'uname -a'
 # stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'test -f /var/run/reboot-required'
 # stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'dpkg-query -W -f="\${binary:Package},\${db:Status-Abbrev},\${Version},\${Source},\${source:Version}\n"'
-# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'apt-get update'
-# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'LANGUAGE=en_US.UTF-8 apt-get dist-upgrade --dry-run'
-# stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'LANGUAGE=en_US.UTF-8 apt-cache policy '
 
 # stty cols 1000; docker ps --format '{{.ID}} {{.Names}} {{.Image}}'
-# stty cols 1000; docker ps --filter 'status=exited' --format '{{.ID}} {{.Names}} {{.Image}}'
 # stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'ls /etc/debian_version'
 # stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'ls /etc/fedora-release'
 # stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'ls /etc/oracle-release'
@@ -113,6 +96,18 @@ verify_env() {
   esac
 }
 
+verify_piped_command() {
+  case "$1" in
+    repoquery)
+      case "$2" in
+        --version)
+          /bin/echo "$1 $2 | grep dnf"
+          ;;
+      esac
+      ;;
+  esac
+}
+
 verify_command() {
   case "$1" in
     ls|lsb_release|uname|test|repoquery|dpkg-query|apt-cache)
@@ -148,8 +143,8 @@ verify_command() {
       /bin/echo /sbin/ip -o addr
       ;;
     yum)
-      case "$4" in
-        updateinfo)
+      case "$2" in
+        makecache)
           /bin/echo "$@"
           ;;
       esac
@@ -212,6 +207,12 @@ verify_command() {
             options="$options --env '$env'"
             shift
           fi
+          command=$(verify_piped_command "$@")
+          if [ -n "$command" ]
+          then
+            docker exec $options $container_id /bin/sh -c "$command"
+            exit
+          fi
           command=$(verify_command "$@")
           if [ -n "$command" ]
           then
@@ -242,6 +243,13 @@ if [ -n "$env" ]
 then
   export "$env"
   shift
+fi
+
+command=$(verify_piped_command "$@")
+if [ -n "$command" ]
+then
+  /bin/sh -c "$command"
+  exit
 fi
 
 IFS=' '
