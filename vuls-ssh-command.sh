@@ -83,7 +83,7 @@ escape() {
 }
 
 exec_command() {
-  IFS='	'
+  IFS=$(printf '\t')
   set -- $(/bin/echo "$@" | xargs printf '%s\t')
   exec "$@"
 }
@@ -101,7 +101,31 @@ verify_piped_command() {
     repoquery)
       case "$2" in
         --version)
-          /bin/echo "$1 $2 | grep dnf"
+          /bin/echo 'repoquery --version | grep dnf'
+          ;;
+      esac
+      ;;
+    docker)
+      case "$2" in
+        exec)
+          options="--user 0"
+          container_id="$5"
+          IFS=$(printf '\t')
+          set -- $(/bin/echo "$@" | xargs printf '%s\t')
+          IFS=' '
+          set -- $8
+          case "$1" in
+            /sbin/ip)
+              /bin/echo "docker exec $options $container_id /bin/sh -c 'while read line; do set -- \$line; test \"\$2\" = \"$container_id\" && echo \$1; done < /etc/hosts'"
+              ;;
+            *)
+              command=$(verify_piped_command "$@")
+              if [ -n "$command" ]
+              then
+                /bin/echo "docker exec $options $container_id /bin/sh -c '$command'"
+              fi
+              ;;
+          esac
           ;;
       esac
       ;;
@@ -110,7 +134,7 @@ verify_piped_command() {
 
 verify_command() {
   case "$1" in
-    ls|lsb_release|uname|test|repoquery|dpkg-query|apt-cache)
+    ls|lsb_release|uname|test|dpkg-query|apt-cache)
       /bin/echo "$@"
       ;;
     cat)
@@ -144,8 +168,18 @@ verify_command() {
       ;;
     yum)
       case "$2" in
+        --color=never)
+          /bin/echo yum --color=never --security updateinfo $5 $6
+          ;;
         makecache)
           /bin/echo "$@"
+          ;;
+      esac
+      ;;
+    repoquery)
+      case "$2" in
+        --all)
+          /bin/echo 'repoquery --all --pkgnarrow=updates --qf="%{NAME} %{EPOCH} %{VERSION} %{RELEASE} %{REPO}"'
           ;;
       esac
       ;;
@@ -197,7 +231,7 @@ verify_command() {
         exec)
           options="--user 0"
           container_id="$5"
-          IFS='	'
+          IFS=$(printf '\t')
           set -- $(/bin/echo "$@" | xargs printf '%s\t')
           IFS=' '
           set -- $8
@@ -206,12 +240,6 @@ verify_command() {
           then
             options="$options --env '$env'"
             shift
-          fi
-          command=$(verify_piped_command "$@")
-          if [ -n "$command" ]
-          then
-            docker exec $options $container_id /bin/sh -c "$command"
-            exit
           fi
           command=$(verify_command "$@")
           if [ -n "$command" ]
