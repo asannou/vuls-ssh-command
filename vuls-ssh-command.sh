@@ -116,7 +116,8 @@ verify_piped_command() {
           set -- $8
           case "$1" in
             /sbin/ip)
-              /bin/echo "docker exec $options $container_id /bin/sh -c 'while read line; do set -- \$line; test \"\$2\" = \"$container_id\" && echo \$1; done < /etc/hosts'"
+              hostname=$(echo $container_id | cut -c -12)
+              /bin/echo "docker exec $options $container_id /bin/sh -c 'while read line; do set -- \$line; test \"\$2\" = \"$hostname\" && echo \"0: eth0 inet \$1/32\"; done < /etc/hosts'"
               ;;
             *)
               command=$(verify_piped_command "$@")
@@ -172,7 +173,7 @@ verify_command() {
           /bin/echo yum --color=never --security updateinfo $5 $6
           ;;
         makecache)
-          /bin/echo "$@"
+          /bin/echo yum makecache --assumeyes
           ;;
       esac
       ;;
@@ -188,7 +189,7 @@ verify_command() {
         -qa)
           /bin/echo "$@"
           ;;
-        *)
+        -q)
           /bin/echo rpm -q --last kernel
           ;;
       esac
