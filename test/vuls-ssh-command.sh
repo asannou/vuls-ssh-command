@@ -38,6 +38,9 @@ testAllow()
   sshCommand 'stty cols 1000; curl --max-time 1 --retry 3 --noproxy 169.254.169.254 http://169.254.169.254/latest/meta-data/instance-id' > /dev/null 2>&1
   assertNotEquals 126 $?
 
+  sshCommand 'stty cols 1000; curl --max-time 1 --noproxy 169.254.169.254 http://169.254.169.254/latest/meta-data/instance-id' > /dev/null 2>&1
+  assertNotEquals 126 $?
+
   sshCommand 'stty cols 1000; /sbin/ip -o addr' > /dev/null 2>&1
   assertNotEquals 126 $?
 
@@ -54,10 +57,16 @@ testAllow()
   sshCommand 'stty cols 1000; repoquery --all --pkgnarrow=updates --qf="%{NAME} %{EPOCH} %{VERSION} %{RELEASE} %{REPO}"' > /dev/null 2>&1
   assertNotEquals 126 $?
 
+  sshCommand 'stty cols 1000; repoquery --version | grep dnf' > /dev/null 2>&1
+  assertNotEquals 126 $?
+
   sshCommand 'stty cols 1000; yum --color=never --security updateinfo list updates' > /dev/null 2>&1
   assertNotEquals 126 $?
 
   sshCommand 'stty cols 1000; yum --color=never --security updateinfo updates' > /dev/null 2>&1
+  assertNotEquals 126 $?
+
+  sshCommand 'stty cols 1000; yum makecache --assumeyes' > /dev/null 2>&1
   assertNotEquals 126 $?
 }
 
@@ -76,14 +85,14 @@ testDockerAllow()
   assertNotEquals 126 $?
 
   out=$(sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c 'lsb_release -ir'")
-  assertEquals 126 $?
   assertTrue "echo '$out' | grep -qiE 'oci runtime (error|exec failed): exec failed: '"
 
   sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c 'type curl'" > /dev/null 2>&1
   assertNotEquals 126 $?
 
-  sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c '/sbin/ip -o addr'" > /dev/null 2>&1
+  out=$(sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c '/sbin/ip -o addr'")
   assertNotEquals 126 $?
+  assertTrue "echo '$out' | grep -qiE '^0: eth0 inet [0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/32$'"
 
   sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c 'uname -r'" > /dev/null 2>&1
   assertNotEquals 126 $?
@@ -91,20 +100,22 @@ testDockerAllow()
   sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c 'test -f /var/run/reboot-required'" > /dev/null 2>&1
   assertNotEquals 126 $?
 
+  sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c 'repoquery --version | grep dnf'" > /dev/null 2>&1
+  assertNotEquals 126 $?
+
+  out=$(sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c 'repoquery --all --pkgnarrow=updates --qf='%{NAME} %{EPOCH} %{VERSION} %{RELEASE} %{REPO}''")
+  assertTrue "echo '$out' | grep -qiE 'oci runtime (error|exec failed): exec failed: '"
+
   out=$(sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c 'dpkg-query -W -f="'"\${binary:Package},\${db:Status-Abbrev},\${Version},\${Source},\${source:Version}\n"'"'")
-  assertEquals 126 $?
   assertTrue "echo '$out' | grep -qiE 'oci runtime (error|exec failed): exec failed: '"
 
   out=$(sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c 'apt-get update'")
-  assertEquals 126 $?
   assertTrue "echo '$out' | grep -qiE 'oci runtime (error|exec failed): exec failed: '"
 
   out=$(sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c 'LANGUAGE=en_US.UTF-8 apt-get dist-upgrade --dry-run'")
-  assertEquals 126 $?
   assertTrue "echo '$out' | grep -qiE 'oci runtime (error|exec failed): exec failed: '"
 
   out=$(sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c 'LANGUAGE=en_US.UTF-8 apt-cache policy'")
-  assertEquals 126 $?
   assertTrue "echo '$out' | grep -qiE 'oci runtime (error|exec failed): exec failed: '"
 }
 
@@ -198,6 +209,14 @@ testTamper()
   out="$(sshCommand 'stty cols 1000; LANGUAGE=$(id>&2) ls -d /' 2>&1)"
   assertNotEquals 126 $?
   assertEquals '/' "$out"
+
+  out="$(sshCommand 'stty cols 1000; repoquery --version | id' 2>&1)"
+  assertNotEquals 126 $?
+  assertEquals '' "$out"
+
+  out="$(sshCommand 'stty cols 1000; repoquery --version | grep dnf | id' 2>&1)"
+  assertNotEquals 126 $?
+  assertEquals '' "$out"
 }
 
 testDockerTamper()
