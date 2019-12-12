@@ -1,6 +1,7 @@
 [slack]
 #hookURL = "https://hooks.slack.com/services/"
 #channel = ""
+#authUser = ""
 #notifyUsers = []
 
 [default]
