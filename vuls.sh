@@ -14,7 +14,7 @@ shift
 
 ROLE_ARN=arn:aws:iam::$TARGET_ACCOUNT_ID:role/VulsRole-$ACCOUNT_ID
 ROLE_SESSION_NAME=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
-BUCKET_NAME=vuls-ssm-output-$ACCOUNT_ID-$TARGET_ACCOUNT_ID
+BUCKET_NAME=vuls-ssm-$ACCOUNT_ID-$TARGET_ACCOUNT_ID
 
 assume_role() {
   set -- $(aws sts assume-role --role-arn $ROLE_ARN --role-session-name $ROLE_SESSION_NAME --output text --query Credentials.[AccessKeyId,SecretAccessKey,SessionToken])
