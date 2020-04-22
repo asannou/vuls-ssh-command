@@ -60,14 +60,12 @@ testAllow()
   sshCommand 'stty cols 1000; repoquery --version | grep dnf' > /dev/null 2>&1
   assertNotEquals 126 $?
 
-  sshCommand 'stty cols 1000; yum --color=never --security updateinfo list updates' > /dev/null 2>&1
-  assertNotEquals 126 $?
-
-  sshCommand 'stty cols 1000; yum --color=never --security updateinfo updates' > /dev/null 2>&1
-  assertNotEquals 126 $?
-
   sshCommand 'stty cols 1000; yum makecache --assumeyes' > /dev/null 2>&1
   assertNotEquals 126 $?
+
+  out=$(sshCommand 'stty cols 1000; sudo -S cat /proc/1/maps 2>/dev/null | grep -v " 00:00 " | awk "{print $6}" | sort -n | uniq')
+  assertNotEquals 126 $?
+  assertNotEquals '' "$out"
 }
 
 testDockerAllow()
@@ -117,6 +115,10 @@ testDockerAllow()
 
   out=$(sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c 'LANGUAGE=en_US.UTF-8 apt-cache policy'")
   assertTrue "echo '$out' | grep -qiE 'oci runtime (error|exec failed): exec failed: '"
+
+  out=$(sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c 'cat /proc/1/maps 2>/dev/null | grep -v \" 00:00 \" | awk \"{print \$6}\" | sort -n | uniq'")
+  assertNotEquals 126 $?
+  assertNotEquals '' "$out"
 }
 
 testDeny()
@@ -135,6 +137,9 @@ testDeny()
 
   sshCommand 'stty cols 1000; cat /etc/passwd' > /dev/null 2>&1
   assertEquals 126 $?
+
+  sshCommand 'stty cols 1000; sudo -S cat /proc/;{cat,/etc/passwd};/maps' > /dev/null 2>&1
+  assertEquals 126 $?
 }
 
 testDockerDeny()
@@ -149,6 +154,9 @@ testDockerDeny()
   assertEquals 126 $?
 
   sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c 'cat /etc/passwd'" > /dev/null 2>&1
+  assertEquals 126 $?
+
+  sshCommand "stty cols 1000; docker exec --user 0 $container_id /bin/sh -c 'cat /proc/;{cat,/etc/passwd};/maps'" > /dev/null 2>&1
   assertEquals 126 $?
 }
 
@@ -207,6 +215,14 @@ testTamper()
   assertEquals '/' "$out"
 
   out="$(sshCommand 'stty cols 1000; LANGUAGE=$(id>&2) ls -d /' 2>&1)"
+  assertNotEquals 126 $?
+  assertEquals '/' "$out"
+
+  out="$(sshCommand 'stty cols 1000; sudo -S LANGUAGE=`id>&2` ls -d /' 2>&1)"
+  assertNotEquals 126 $?
+  assertEquals '/' "$out"
+
+  out="$(sshCommand 'stty cols 1000; sudo -S LANGUAGE=$(id>&2) ls -d /' 2>&1)"
   assertNotEquals 126 $?
   assertEquals '/' "$out"
 
