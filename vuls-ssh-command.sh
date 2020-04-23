@@ -96,8 +96,7 @@
 # stty cols 1000; docker exec --user 0 deadbeefdead /bin/sh -c 'apk version'
 
 # https://github.com/future-architect/vuls/tree/v0.9.1/scan
-# $ grep 'exec(' *.go | grep -v cmd
-# $ grep 'cmd := ' *.go
+# $ grep -n -E 'exec\(|cmd :?= ' *.go
 
 test_stty() {
   IFS=' '
@@ -178,7 +177,7 @@ verify_piped_command() {
 
 verify_command() {
   case "$1" in
-    ls|lsb_release|uname|test|dpkg-query|apt-cache|ps|stat|checkrestart)
+    ls|lsb_release|uname|test|dpkg-query|apt-cache|ps|stat|checkrestart|needs-restarting)
       /bin/echo "$@"
       ;;
     cat)
@@ -221,19 +220,12 @@ verify_command() {
       esac
       ;;
     repoquery)
-      case "$2" in
-        --all)
-          /bin/echo 'repoquery --all --pkgnarrow=updates --qf="%{NAME} %{EPOCH} %{VERSION} %{RELEASE} %{REPO}"'
-          ;;
-      esac
+      /bin/echo "$@"
       ;;
     rpm)
       case "$2" in
-        -qa|-qf)
+        -q|-qa|-qf)
           /bin/echo "$@"
-          ;;
-        -q)
-          /bin/echo rpm -q --last kernel
           ;;
       esac
       ;;
@@ -265,7 +257,11 @@ verify_command() {
       esac
       ;;
     zypper)
-      /bin/echo zypper -V
+      case "$2" in
+        -V)
+          /bin/echo zypper -V
+          ;;
+      esac
       ;;
     sudo)
       shift 2
